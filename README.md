@@ -23,4 +23,4 @@ command = "/path/to/mackerel-plugin-tomcat"
 
 ## Documents
 
-*[Server Status](http://tomcat.apache.org/tomcat-8.0-doc/manager-howto.html#Server_Status)
+* [Server Status](http://tomcat.apache.org/tomcat-8.0-doc/manager-howto.html#Server_Status)
