@@ -1,4 +1,4 @@
-# mackerel-plugin-tomcat
+# mackerel-plugin-tomcat [![Build Status](https://travis-ci.org/y-kuno/mackerel-plugin-tomcat.svg?branch=master)](https://travis-ci.org/y-kuno/mackerel-plugin-tomcat)
 
 Tomcat plugin for mackerel.io agent. This repository releases an artifact to Github Releases, which satisfy the format for mkr plugin installer.
 
