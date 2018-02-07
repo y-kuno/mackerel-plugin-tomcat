@@ -185,7 +185,7 @@ func Do() {
 	optPort := flag.String("port", "8080", "Port")
 	optUser := flag.String("user", "tomcat", "Username")
 	optPassword := flag.String("password", os.Getenv("TOMCAT_PASSWORD"), "Password")
-	optPrefix := flag.String("metric-key-prefix", "", "Metric key prefix")
+	optPrefix := flag.String("metric-key-prefix", "tomcat", "Metric key prefix")
 	optTempfile := flag.String("tempfile", "", "Temp file name")
 	flag.Parse()
 
