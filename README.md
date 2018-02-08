@@ -11,7 +11,7 @@ mkr plugin install y-kuno/mackerel-plugin-tomcat
 ## Synopsis
 
 ```shell
-mackerel-plugin-tomcat [-host=<host>] [-port=<port>] [-user=<user>] [-port=<password>] [-metric-key-prefix=<prefix>]
+mackerel-plugin-tomcat [-host=<host>] [-port=<port>] [-user=<user>] [-password=<password>] [-metric-key-prefix=<prefix>]
 ```
 
 ## Example of mackerel-agent.conf
