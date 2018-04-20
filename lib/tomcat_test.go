@@ -3,6 +3,9 @@ package mptomcat
 import (
 	"testing"
 
+	"encoding/json"
+	"strings"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,4 +32,96 @@ func TestParseMetrics(t *testing.T) {
 
 	assert.Equal(t, metrics["thread.ajp.currentThreadsBusy"], float64(0))
 	assert.Equal(t, metrics["thread.http.currentThreadsBusy"], float64(1))
+}
+
+func TestFetchThreadPool(t *testing.T) {
+	str := `{"request":{"mbean":"Catalina:name=*,type=ThreadPool","attribute":"currentThreadsBusy","type":"read"},"value":{"Catalina:name=\"ajp-nio-8009\",type=ThreadPool":{"currentThreadsBusy":123},"Catalina:name=\"http-nio-8080\",type=ThreadPool":{"currentThreadsBusy":345}},"timestamp":1524116731,"status":200}`
+/*
+{
+  "request": {
+    "mbean": "Catalina:name=*,type=ThreadPool",
+    "attribute": "currentThreadsBusy",
+    "type": "read"
+  },
+  "value": {
+    "Catalina:name=\"ajp-nio-8009\",type=ThreadPool": {
+      "currentThreadsBusy": 123
+    },
+    "Catalina:name=\"http-nio-8080\",type=ThreadPool": {
+      "currentThreadsBusy": 345
+    }
+  },
+  "timestamp": 1524116737,
+  "status": 200
+}
+ */
+	var p TomcatPlugin
+	metrics := make(map[string]float64)
+	attribute := "currentThreadsBusy"
+	var value JolokiaResponse
+
+	buff := strings.NewReader(str)
+	dec := json.NewDecoder(buff)
+	if err := dec.Decode(&value); err != nil {
+		t.Fatal(err)
+	}
+
+	err := p.parseThreadPool(attribute, metrics, value)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, metrics["thread.ajp." + attribute], float64(123))
+	assert.Equal(t, metrics["thread.http." + attribute], float64(345))
+}
+
+func TestFetchGlobalRequestProcessor(t *testing.T) {
+	str := `{"request":{"mbean":"Catalina:name=*,type=GlobalRequestProcessor","type":"read"},"value":{"Catalina:name=\"ajp-nio-8009\",type=GlobalRequestProcessor":{"requestCount":0,"maxTime":0,"bytesReceived":0,"modelerType":"org.apache.coyote.RequestGroupInfo","bytesSent":0,"processingTime":0,"errorCount":0},"Catalina:name=\"http-nio-8080\",type=GlobalRequestProcessor":{"requestCount":3,"maxTime":64,"bytesReceived":0,"modelerType":"org.apache.coyote.RequestGroupInfo","bytesSent":6054,"processingTime":83,"errorCount":1}},"timestamp":1524125035,"status":200}`
+/*
+{
+  "request": {
+    "mbean": "Catalina:name=*,type=GlobalRequestProcessor",
+    "type": "read"
+  },
+  "value": {
+    "Catalina:name=\"ajp-nio-8009\",type=GlobalRequestProcessor": {
+      "requestCount": 0,
+      "maxTime": 0,
+      "bytesReceived": 0,
+      "modelerType": "org.apache.coyote.RequestGroupInfo",
+      "bytesSent": 0,
+      "processingTime": 0,
+      "errorCount": 0
+    },
+    "Catalina:name=\"http-nio-8080\",type=GlobalRequestProcessor": {
+      "requestCount": 3,
+      "maxTime": 64,
+      "bytesReceived": 0,
+      "modelerType": "org.apache.coyote.RequestGroupInfo",
+      "bytesSent": 6054,
+      "processingTime": 83,
+      "errorCount": 1
+    }
+  },
+  "timestamp": 1524125095,
+  "status": 200
+}
+ */
+	var p TomcatPlugin
+	metrics := make(map[string]float64)
+	var value JolokiaResponse
+
+	buff := strings.NewReader(str)
+	dec := json.NewDecoder(buff)
+	if err := dec.Decode(&value); err != nil {
+		t.Fatal(err)
+	}
+
+	err := p.parseGlobalRequestProcessor( metrics, value)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, metrics["request.processing_time.ajp.processingTime"], float64(0))
+	assert.Equal(t, metrics["request.processing_time.http.processingTime"], float64(83))
 }

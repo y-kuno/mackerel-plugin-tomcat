@@ -11,16 +11,24 @@ mkr plugin install y-kuno/mackerel-plugin-tomcat
 ## Synopsis
 
 ```shell
-mackerel-plugin-tomcat [-host=<host>] [-port=<port>] [-user=<user>] [-password=<password>] [-metric-key-prefix=<prefix>]
+mackerel-plugin-tomcat [-host=<host>] [-port=<port>] [-user=<user>] [-password=<password>] [-module=<module>] [-metric-key-prefix=<prefix>]
 ```
 
-## Example of mackerel-agent.conf
+### Use Tomcat Manager App
 
 ```
 [plugin.metrics.tomcat]
-command = "/path/to/mackerel-plugin-tomcat"
+command = "/path/to/mackerel-plugin-tomcat -user=tomcat -password=password"
+```
+
+### Use Jolokia Agent
+
+```
+[plugin.metrics.tomcat]
+command = "/path/to/mackerel-plugin-tomcat -port=8778 -module=jolokia"
 ```
 
 ## Documents
 
 * [Server Status](http://tomcat.apache.org/tomcat-8.0-doc/manager-howto.html#Server_Status)
+* [Jolokia](https://jolokia.org)

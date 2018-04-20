@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -15,9 +16,11 @@ import (
 
 // TomcatPlugin mackerel plugin
 type TomcatPlugin struct {
-	Target   string
+	Host     string
+	Port     string
 	User     string
 	Password string
+	Module   string
 	Prefix   string
 }
 
@@ -60,6 +63,12 @@ type RequestInfo struct {
 	BytesSent      float64 `xml:"bytesSent,attr"`
 }
 
+// JolokiaResponse tomcat jolokia response struct
+type JolokiaResponse struct {
+	Request   map[string]interface{}
+	Value     map[string]interface{}
+}
+
 // MetricKeyPrefix interface for PluginWithPrefix
 func (p *TomcatPlugin) MetricKeyPrefix() string {
 	if p.Prefix == "" {
@@ -83,7 +92,7 @@ func (p *TomcatPlugin) GraphDefinition() map[string]mp.Graphs {
 			},
 		},
 		"thread.#": {
-			Label: labelPrefix + " Thread",
+			Label: labelPrefix + " Threads",
 			Unit:  "integer",
 			Metrics: []mp.Metrics{
 				{Name: "maxThreads", Label: "max"},
@@ -100,7 +109,7 @@ func (p *TomcatPlugin) GraphDefinition() map[string]mp.Graphs {
 			},
 		},
 		"request.count.#": {
-			Label: labelPrefix + " Request Count",
+			Label: labelPrefix + " Request Counts",
 			Unit:  "integer",
 			Metrics: []mp.Metrics{
 				{Name: "requestCount", Label: "request", Diff: true},
@@ -108,7 +117,7 @@ func (p *TomcatPlugin) GraphDefinition() map[string]mp.Graphs {
 			},
 		},
 		"request.byte.#": {
-			Label: labelPrefix + " Request Byte",
+			Label: labelPrefix + " Request Bytes",
 			Unit:  "bytes",
 			Metrics: []mp.Metrics{
 				{Name: "bytesReceived", Label: "received", Diff: true},
@@ -120,10 +129,19 @@ func (p *TomcatPlugin) GraphDefinition() map[string]mp.Graphs {
 
 // FetchMetrics interface for mackerelplugin
 func (p *TomcatPlugin) FetchMetrics() (map[string]float64, error) {
+	if p.Module == "jolokia" {
+		return p.fetchJolokiaMetrics()
+	}
+
+	return p.fetchManagerMetrics()
+}
+
+func (p *TomcatPlugin) fetchManagerMetrics() (map[string]float64, error) {
 	metrics := make(map[string]float64)
 
 	client := http.DefaultClient
-	req, err := http.NewRequest("GET", p.Target, nil)
+	url := fmt.Sprintf("http://%s:%s/manager/status/all?XML=true", p.Host, p.Port)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +196,94 @@ func (p *TomcatPlugin) parseMetrics(metrics map[string]float64, data []byte) err
 	return nil
 }
 
+func (p *TomcatPlugin) fetchJolokiaMetrics() (map[string]float64, error) {
+	metrics := make(map[string]float64)
+
+	if err := p.fetchThreadPool(metrics); err != nil {
+		return nil, err
+	}
+	if err := p.fetchGlobalRequestProcessor(metrics); err != nil {
+		return nil, err
+	}
+
+	return metrics, nil
+}
+
+func (p *TomcatPlugin) fetchThreadPool(metrics map[string]float64) error {
+	var attributes = []string{"maxThreads", "currentThreadCount", "currentThreadsBusy"}
+	for _, attr := range attributes {
+		res, err := p.executeGetRequest(fmt.Sprintf("Catalina:name=*,type=ThreadPool/%s", attr))
+		if err != nil {
+			return err
+		}
+
+		if err := p.parseThreadPool(attr, metrics, res); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *TomcatPlugin) parseThreadPool(attribute string, metrics map[string]float64, res JolokiaResponse) error {
+	for k, v := range res.Value {
+		value := v.(map[string]interface{})
+		protocol := strings.Split(strings.Split(k, "\"")[1], "-")[0]
+		// thread
+		metrics["thread." + protocol + "." + attribute] = value[attribute].(float64)
+	}
+
+	return nil
+}
+
+func (p *TomcatPlugin) fetchGlobalRequestProcessor(metrics map[string]float64) error {
+	res, err := p.executeGetRequest("Catalina:name=*,type=GlobalRequestProcessor")
+	if err != nil {
+		return err
+	}
+
+	if err := p.parseGlobalRequestProcessor(metrics, res); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *TomcatPlugin) parseGlobalRequestProcessor(metrics map[string]float64, res JolokiaResponse) error {
+	for k, v := range res.Value {
+		value := v.(map[string]interface{})
+		protocol := strings.Split(strings.Split(k, "\"")[1], "-")[0]
+		// processing time
+		metrics["request.processing_time." + protocol + ".maxTime"] = value["maxTime"].(float64)
+		metrics["request.processing_time." + protocol + ".processingTime"] = value["processingTime"].(float64)
+		// request count
+		metrics["request.count." + protocol + ".requestCount"] = value["requestCount"].(float64)
+		metrics["request.count." + protocol + ".errorCount"] = value["errorCount"].(float64)
+		// request byte
+		metrics["request.byte." + protocol + ".bytesReceived"] = value["bytesReceived"].(float64)
+		metrics["request.byte." + protocol + ".bytesSent"] = value["bytesSent"].(float64)
+	}
+
+	return nil
+}
+
+func (p *TomcatPlugin) executeGetRequest(mbean string) (JolokiaResponse, error) {
+	var jolokiaResponse JolokiaResponse
+
+	url := fmt.Sprintf("http://%s:%s/jolokia/read/%s", p.Host, p.Port, mbean)
+	res, err := http.Get(url)
+	if err != nil {
+		return jolokiaResponse ,err
+	}
+	defer res.Body.Close()
+
+	dec := json.NewDecoder(res.Body)
+	if err := dec.Decode(&jolokiaResponse); err != nil {
+		return jolokiaResponse, err
+	}
+
+	return jolokiaResponse, nil
+}
 
 // Do the plugin
 func Do() {
@@ -185,14 +291,17 @@ func Do() {
 	optPort := flag.String("port", "8080", "Port")
 	optUser := flag.String("user", "tomcat", "Username")
 	optPassword := flag.String("password", os.Getenv("TOMCAT_PASSWORD"), "Password")
+	optModule := flag.String("module", "", "Module")
 	optPrefix := flag.String("metric-key-prefix", "tomcat", "Metric key prefix")
 	optTempfile := flag.String("tempfile", "", "Temp file name")
 	flag.Parse()
 
 	plugin := mp.NewMackerelPlugin(&TomcatPlugin{
-		Target: fmt.Sprintf("http://%s:%s/manager/status/all?XML=true", *optHost, *optPort),
+		Host: *optHost,
+		Port: *optPort,
 		User: *optUser,
 		Password: *optPassword,
+		Module: *optModule,
 		Prefix: *optPrefix,
 	})
 	plugin.Tempfile = *optTempfile
