@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.4 (2018-04-20)
+
+* Added option to select jolokia moduleAdded option to select jolokia module
+
 ## v0.0.3 (2018-02-08)
 
 * modify metrics graphs option
