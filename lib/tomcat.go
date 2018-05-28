@@ -65,8 +65,8 @@ type RequestInfo struct {
 
 // JolokiaResponse tomcat jolokia response struct
 type JolokiaResponse struct {
-	Request   map[string]interface{}
-	Value     map[string]interface{}
+	Request map[string]interface{}
+	Value   map[string]interface{}
 }
 
 // MetricKeyPrefix interface for PluginWithPrefix
@@ -179,18 +179,18 @@ func (p *TomcatPlugin) parseMetrics(metrics map[string]float64, data []byte) err
 		array := strings.Split(connector.Name, "-")
 		protocol := strings.Trim(array[0], "\"")
 		// thread
-		metrics["thread." + protocol + ".maxThreads"] = connector.ThreadInfo.MaxThreads
-		metrics["thread." + protocol + ".currentThreadCount"] = connector.ThreadInfo.CurrentThreadCount
-		metrics["thread." + protocol + ".currentThreadsBusy"] = connector.ThreadInfo.CurrentThreadsBusy
+		metrics["thread."+protocol+".maxThreads"] = connector.ThreadInfo.MaxThreads
+		metrics["thread."+protocol+".currentThreadCount"] = connector.ThreadInfo.CurrentThreadCount
+		metrics["thread."+protocol+".currentThreadsBusy"] = connector.ThreadInfo.CurrentThreadsBusy
 		// processing time
-		metrics["request.processing_time." + protocol + ".maxTime"] = connector.RequestInfo.MaxTime
-		metrics["request.processing_time." + protocol + ".processingTime"] = connector.RequestInfo.ProcessingTime
+		metrics["request.processing_time."+protocol+".maxTime"] = connector.RequestInfo.MaxTime
+		metrics["request.processing_time."+protocol+".processingTime"] = connector.RequestInfo.ProcessingTime
 		// request count
-		metrics["request.count." + protocol + ".requestCount"] = connector.RequestInfo.RequestCount
-		metrics["request.count." + protocol + ".errorCount"] = connector.RequestInfo.ErrorCount
+		metrics["request.count."+protocol+".requestCount"] = connector.RequestInfo.RequestCount
+		metrics["request.count."+protocol+".errorCount"] = connector.RequestInfo.ErrorCount
 		// request byte
-		metrics["request.byte." + protocol + ".bytesReceived"] = connector.RequestInfo.BytesReceived
-		metrics["request.byte." + protocol + ".bytesSent"] = connector.RequestInfo.BytesSent
+		metrics["request.byte."+protocol+".bytesReceived"] = connector.RequestInfo.BytesReceived
+		metrics["request.byte."+protocol+".bytesSent"] = connector.RequestInfo.BytesSent
 	}
 
 	return nil
@@ -230,7 +230,7 @@ func (p *TomcatPlugin) parseThreadPool(attribute string, metrics map[string]floa
 		value := v.(map[string]interface{})
 		protocol := strings.Split(strings.Split(k, "\"")[1], "-")[0]
 		// thread
-		metrics["thread." + protocol + "." + attribute] = value[attribute].(float64)
+		metrics["thread."+protocol+"."+attribute] = value[attribute].(float64)
 	}
 
 	return nil
@@ -254,14 +254,14 @@ func (p *TomcatPlugin) parseGlobalRequestProcessor(metrics map[string]float64, r
 		value := v.(map[string]interface{})
 		protocol := strings.Split(strings.Split(k, "\"")[1], "-")[0]
 		// processing time
-		metrics["request.processing_time." + protocol + ".maxTime"] = value["maxTime"].(float64)
-		metrics["request.processing_time." + protocol + ".processingTime"] = value["processingTime"].(float64)
+		metrics["request.processing_time."+protocol+".maxTime"] = value["maxTime"].(float64)
+		metrics["request.processing_time."+protocol+".processingTime"] = value["processingTime"].(float64)
 		// request count
-		metrics["request.count." + protocol + ".requestCount"] = value["requestCount"].(float64)
-		metrics["request.count." + protocol + ".errorCount"] = value["errorCount"].(float64)
+		metrics["request.count."+protocol+".requestCount"] = value["requestCount"].(float64)
+		metrics["request.count."+protocol+".errorCount"] = value["errorCount"].(float64)
 		// request byte
-		metrics["request.byte." + protocol + ".bytesReceived"] = value["bytesReceived"].(float64)
-		metrics["request.byte." + protocol + ".bytesSent"] = value["bytesSent"].(float64)
+		metrics["request.byte."+protocol+".bytesReceived"] = value["bytesReceived"].(float64)
+		metrics["request.byte."+protocol+".bytesSent"] = value["bytesSent"].(float64)
 	}
 
 	return nil
@@ -273,7 +273,7 @@ func (p *TomcatPlugin) executeGetRequest(mbean string) (JolokiaResponse, error) 
 	url := fmt.Sprintf("http://%s:%s/jolokia/read/%s", p.Host, p.Port, mbean)
 	res, err := http.Get(url)
 	if err != nil {
-		return jolokiaResponse ,err
+		return jolokiaResponse, err
 	}
 	defer res.Body.Close()
 
@@ -297,12 +297,12 @@ func Do() {
 	flag.Parse()
 
 	plugin := mp.NewMackerelPlugin(&TomcatPlugin{
-		Host: *optHost,
-		Port: *optPort,
-		User: *optUser,
+		Host:     *optHost,
+		Port:     *optPort,
+		User:     *optUser,
 		Password: *optPassword,
-		Module: *optModule,
-		Prefix: *optPrefix,
+		Module:   *optModule,
+		Prefix:   *optPrefix,
 	})
 	plugin.Tempfile = *optTempfile
 	plugin.Run()
