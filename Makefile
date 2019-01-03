@@ -1,5 +1,5 @@
 setup:
-	go get \
+	GO111MODULE=off go get \
 		github.com/Songmu/goxz/cmd/goxz \
 		github.com/tcnksm/ghr \
 		github.com/golang/lint/golint
