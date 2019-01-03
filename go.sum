@@ -1,0 +1,10 @@
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/mackerelio/go-mackerel-plugin v0.0.0-20181105013132-7cbd71bf6464 h1:1m0oltq/cUsxSyEl+ey4CQXqP2gmTIR3W4mwsK/YsPk=
+github.com/mackerelio/go-mackerel-plugin v0.0.0-20181105013132-7cbd71bf6464/go.mod h1:cnhQn7nt6mOZKBya/EA/Bn0RxHDrKJv1XdXoUbiKl2I=
+github.com/mackerelio/golib v0.0.0-20181013165214-798b862d5d4a h1:Z+JVVqW1SPQNxBhQ1s+6/xGbDY1troL9EkW10s3v2/M=
+github.com/mackerelio/golib v0.0.0-20181013165214-798b862d5d4a/go.mod h1:QQXnbzDaHtoPLMpOFWMWyLhxJMBqKEwM5gs6rz+fBxk=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
+github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
