@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.0.5](https://github.com/y-kuno/mackerel-plugin-tomcat/compare/v0.0.4...v0.0.5) (2019-01-03)
+
+* add (default) User-Agent HTTP header
+* delete jolokia module
+* use go 1.11
+
 ## [v0.0.4](https://github.com/y-kuno/mackerel-plugin-tomcat/compare/v0.0.3...v0.0.4) (2018-04-20)
 
 * Added option to select jolokia moduleAdded option to select jolokia module
