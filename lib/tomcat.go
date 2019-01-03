@@ -127,6 +127,7 @@ func (p *TomcatPlugin) FetchMetrics() (map[string]float64, error) {
 		return nil, err
 	}
 	req.SetBasicAuth(p.User, p.Password)
+	req.Header.Set("User-Agent", "mackerel-plugin-mesos")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
